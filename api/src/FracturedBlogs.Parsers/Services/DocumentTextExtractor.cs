@@ -263,7 +263,7 @@ public sealed class DocumentTextExtractor : IDocumentTextExtractor
             return false;
         }
 
-        var isQuestionHeading = line.EndsWith('?') && wordCount <= 10;
+        var isQuestionHeading = IsLikelyQuestionHeading(line);
         if (isQuestionHeading)
         {
             marker = $"{{{{h3:{line}}}}}";
@@ -283,11 +283,7 @@ public sealed class DocumentTextExtractor : IDocumentTextExtractor
             return true;
         }
 
-        var titleCaseWords = line
-            .Split(' ', StringSplitOptions.RemoveEmptyEntries)
-            .Count(w => w.Length > 1 && char.IsUpper(w[0]));
-        var titleRatio = titleCaseWords / (double)Math.Max(1, wordCount);
-        if (titleRatio >= 0.75 && wordCount <= 10)
+        if (IsLikelyShortTitle(line))
         {
             marker = $"{{{{h3:{line}}}}}";
             return true;
@@ -324,6 +320,31 @@ public sealed class DocumentTextExtractor : IDocumentTextExtractor
             yield break;
         }
 
+        // If a PDF line packs multiple sentences together and contains heading-like snippets,
+        // split sentence boundaries first so short question headings can be styled.
+        var sentenceParts = Regex.Split(line, @"(?<=[\.\?\!])\s+(?=[A-Z])")
+            .Select(x => x.Trim())
+            .Where(x => x.Length > 0)
+            .ToList();
+
+        if (sentenceParts.Count > 1)
+        {
+            var shouldSplitSentences = sentenceParts.Any(p =>
+                SectionHeadingRegex.IsMatch(p) ||
+                IsLikelyQuestionHeading(p) ||
+                IsLikelyShortTitle(p));
+
+            if (shouldSplitSentences)
+            {
+                foreach (var sentence in sentenceParts)
+                {
+                    yield return sentence;
+                }
+
+                yield break;
+            }
+        }
+
         var parts = Regex.Split(line, @"(?<=[\?])\s*(?=[A-Z])")
             .Select(x => x.Trim())
             .Where(x => x.Length > 0)
@@ -354,5 +375,25 @@ public sealed class DocumentTextExtractor : IDocumentTextExtractor
         {
             yield return part;
         }
+    }
+
+    private static bool IsLikelyQuestionHeading(string line)
+    {
+        return line.EndsWith('?') && CountWords(line) <= 10;
+    }
+
+    private static bool IsLikelyShortTitle(string line)
+    {
+        var wordCount = CountWords(line);
+        if (wordCount is 0 or > 10)
+        {
+            return false;
+        }
+
+        var titleCaseWords = line
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            .Count(w => w.Length > 1 && char.IsUpper(w[0]));
+        var titleRatio = titleCaseWords / (double)Math.Max(1, wordCount);
+        return titleRatio >= 0.75;
     }
 }
