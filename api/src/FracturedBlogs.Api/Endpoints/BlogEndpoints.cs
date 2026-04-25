@@ -111,62 +111,72 @@ public static class BlogEndpoints
         [FromForm] UploadBlogRequest request,
         CancellationToken cancellationToken)
     {
-        var extension = Path.GetExtension(request.File.FileName).ToLowerInvariant();
-        if (extension is not ".pdf" and not ".docx")
+        try
         {
-            return Results.BadRequest("Only .pdf and .docx files are supported.");
-        }
-
-        await using var stream = request.File.OpenReadStream();
-        var parseResult = await textExtractor.ExtractAsync(stream, request.File.FileName, cancellationToken);
-        stream.Position = 0;
-
-        var fileKey = await objectStorage.UploadAsync(stream, request.File.ContentType, request.File.FileName, cancellationToken);
-
-        var slug = slugGenerator.Generate(request.Title);
-        var uniqueSlug = await EnsureUniqueSlugAsync(db, slug, cancellationToken);
-        var publishNow = ShouldPublishNow(request.PublishNow);
-        var contentWithImageKeys = await PersistExtractedImagesAsync(
-            parseResult.Text,
-            parseResult.Images,
-            objectStorage,
-            cancellationToken);
-
-        var blog = new Blog
-        {
-            Title = request.Title.Trim(),
-            Slug = uniqueSlug,
-            Summary = string.IsNullOrWhiteSpace(request.Summary) ? null : request.Summary.Trim(),
-            ContentText = contentWithImageKeys,
-            FileKey = fileKey,
-            WordCount = parseResult.WordCount,
-            ReadTimeMinutes = parseResult.ReadTimeMinutes,
-            Status = publishNow ? BlogStatus.Published : BlogStatus.Draft,
-            AuthorName = "Fraser Wilson"
-        };
-
-        var tags = ParseTags(request.Tags);
-        foreach (var tagName in tags)
-        {
-            var tagSlug = slugGenerator.Generate(tagName);
-            var tag = await db.Tags.FirstOrDefaultAsync(t => t.Slug == tagSlug, cancellationToken);
-            if (tag is null)
+            var extension = Path.GetExtension(request.File.FileName).ToLowerInvariant();
+            if (extension is not ".pdf" and not ".docx")
             {
-                tag = new Tag { Name = tagName, Slug = tagSlug };
-                db.Tags.Add(tag);
+                return Results.BadRequest("Only .pdf and .docx files are supported.");
             }
 
-            blog.BlogTags.Add(new BlogTag
+            await using var stream = request.File.OpenReadStream();
+            var parseResult = await textExtractor.ExtractAsync(stream, request.File.FileName, cancellationToken);
+            stream.Position = 0;
+
+            var fileKey = await objectStorage.UploadAsync(stream, request.File.ContentType, request.File.FileName, cancellationToken);
+
+            var slug = slugGenerator.Generate(request.Title);
+            var uniqueSlug = await EnsureUniqueSlugAsync(db, slug, cancellationToken);
+            var publishNow = ShouldPublishNow(request.PublishNow);
+            var contentWithImageKeys = await PersistExtractedImagesAsync(
+                parseResult.Text,
+                parseResult.Images,
+                objectStorage,
+                cancellationToken);
+
+            var blog = new Blog
             {
-                Blog = blog,
-                Tag = tag
-            });
+                Title = request.Title.Trim(),
+                Slug = uniqueSlug,
+                Summary = string.IsNullOrWhiteSpace(request.Summary) ? null : request.Summary.Trim(),
+                ContentText = contentWithImageKeys,
+                FileKey = fileKey,
+                WordCount = parseResult.WordCount,
+                ReadTimeMinutes = parseResult.ReadTimeMinutes,
+                Status = publishNow ? BlogStatus.Published : BlogStatus.Draft,
+                AuthorName = "Fraser Wilson"
+            };
+
+            var tags = ParseTags(request.Tags);
+            foreach (var tagName in tags)
+            {
+                var tagSlug = slugGenerator.Generate(tagName);
+                var tag = await db.Tags.FirstOrDefaultAsync(t => t.Slug == tagSlug, cancellationToken);
+                if (tag is null)
+                {
+                    tag = new Tag { Name = tagName, Slug = tagSlug };
+                    db.Tags.Add(tag);
+                }
+
+                blog.BlogTags.Add(new BlogTag
+                {
+                    Blog = blog,
+                    Tag = tag
+                });
+            }
+
+            db.Blogs.Add(blog);
+            await db.SaveChangesAsync(cancellationToken);
+
+            return Results.Ok(new UploadBlogResponse(blog.Id, blog.Slug, blog.Status.ToString().ToLowerInvariant()));
         }
-
-        db.Blogs.Add(blog);
-        await db.SaveChangesAsync(cancellationToken);
-
-        return Results.Ok(new UploadBlogResponse(blog.Id, blog.Slug, blog.Status.ToString().ToLowerInvariant()));
+        catch (Exception ex)
+        {
+            return Results.Problem(
+                title: "Upload failed",
+                detail: ex.Message,
+                statusCode: StatusCodes.Status500InternalServerError);
+        }
     }
 
     private static async Task<IResult> TogglePublish(
