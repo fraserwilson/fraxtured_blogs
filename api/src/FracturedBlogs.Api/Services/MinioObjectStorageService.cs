@@ -39,6 +39,28 @@ public sealed class MinioObjectStorageService(IOptions<MinioOptions> options) : 
             .WithExpiry(15 * 60));
     }
 
+    public async Task<(byte[] Bytes, string ContentType)> GetObjectAsync(string key, CancellationToken cancellationToken = default)
+    {
+        var client = CreateClient();
+        await EnsureBucketExistsAsync(client, cancellationToken);
+
+        var stat = await client.StatObjectAsync(new StatObjectArgs()
+            .WithBucket(_options.BucketName)
+            .WithObject(key), cancellationToken);
+
+        await using var output = new MemoryStream();
+        await client.GetObjectAsync(new GetObjectArgs()
+            .WithBucket(_options.BucketName)
+            .WithObject(key)
+            .WithCallbackStream(stream => stream.CopyTo(output)), cancellationToken);
+
+        var contentType = string.IsNullOrWhiteSpace(stat.ContentType)
+            ? "application/octet-stream"
+            : stat.ContentType;
+
+        return (output.ToArray(), contentType);
+    }
+
     private IMinioClient CreateClient() => new MinioClient()
         .WithEndpoint(_options.Endpoint)
         .WithCredentials(_options.AccessKey, _options.SecretKey)

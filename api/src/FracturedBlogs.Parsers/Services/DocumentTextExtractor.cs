@@ -221,19 +221,22 @@ public sealed class DocumentTextExtractor : IDocumentTextExtractor
 
         foreach (var line in lines)
         {
-            if (TryMapPdfHeading(line, out var headingMarker))
+            foreach (var segment in SegmentPdfLine(line))
             {
-                yield return headingMarker;
-                continue;
-            }
+                if (TryMapPdfHeading(segment, out var headingMarker))
+                {
+                    yield return headingMarker;
+                    continue;
+                }
 
-            if (TryMapPdfQuote(line, out var quoteMarker))
-            {
-                yield return quoteMarker;
-                continue;
-            }
+                if (TryMapPdfQuote(segment, out var quoteMarker))
+                {
+                    yield return quoteMarker;
+                    continue;
+                }
 
-            yield return line;
+                yield return segment;
+            }
         }
     }
 
@@ -260,7 +263,14 @@ public sealed class DocumentTextExtractor : IDocumentTextExtractor
             return false;
         }
 
-        var looksLikeSentence = line.EndsWith('.') || line.EndsWith('!') || line.EndsWith('?');
+        var isQuestionHeading = line.EndsWith('?') && wordCount <= 10;
+        if (isQuestionHeading)
+        {
+            marker = $"{{{{h3:{line}}}}}";
+            return true;
+        }
+
+        var looksLikeSentence = line.EndsWith('.') || line.EndsWith('!');
         if (looksLikeSentence)
         {
             return false;
@@ -304,5 +314,30 @@ public sealed class DocumentTextExtractor : IDocumentTextExtractor
         }
 
         return false;
+    }
+
+    private static IEnumerable<string> SegmentPdfLine(string line)
+    {
+        if (line.Length < 70)
+        {
+            yield return line;
+            yield break;
+        }
+
+        var parts = Regex.Split(line, @"(?<=\?)\s+(?=[A-Z])")
+            .Select(x => x.Trim())
+            .Where(x => x.Length > 0)
+            .ToList();
+
+        if (parts.Count <= 1)
+        {
+            yield return line;
+            yield break;
+        }
+
+        foreach (var part in parts)
+        {
+            yield return part;
+        }
     }
 }

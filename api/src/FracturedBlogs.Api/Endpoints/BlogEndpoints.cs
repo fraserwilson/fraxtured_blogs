@@ -18,6 +18,7 @@ public static class BlogEndpoints
     {
         group.MapGet("/blogs", GetBlogs);
         group.MapGet("/blogs/{slug}", GetBlogBySlug);
+        group.MapGet("/blogs/assets", GetBlogAsset);
         group.MapPost("/blogs/upload", UploadBlog).DisableAntiforgery();
         group.MapPatch("/blogs/{id:guid}/publish", TogglePublish);
         group.MapDelete("/blogs/{id:guid}", SoftDelete);
@@ -73,7 +74,7 @@ public static class BlogEndpoints
 
     private static async Task<IResult> GetBlogBySlug(
         [FromServices] AppDbContext db,
-        [FromServices] IObjectStorageService objectStorage,
+        HttpContext httpContext,
         string slug,
         CancellationToken cancellationToken)
     {
@@ -88,7 +89,7 @@ public static class BlogEndpoints
             return Results.NotFound();
         }
 
-        var hydratedContent = await HydrateImageUrlsAsync(post.ContentText, objectStorage, cancellationToken);
+        var hydratedContent = HydrateImageUrls(post.ContentText, httpContext);
 
         return Results.Ok(new BlogDetailResponse(
             post.Id,
@@ -101,6 +102,27 @@ public static class BlogEndpoints
             post.CreatedAt,
             post.ReadTimeMinutes,
             post.Status.ToString().ToLowerInvariant()));
+    }
+
+    private static async Task<IResult> GetBlogAsset(
+        [FromServices] IObjectStorageService objectStorage,
+        [FromQuery] string key,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            return Results.BadRequest("Missing asset key.");
+        }
+
+        try
+        {
+            var asset = await objectStorage.GetObjectAsync(key, cancellationToken);
+            return Results.File(asset.Bytes, asset.ContentType);
+        }
+        catch
+        {
+            return Results.NotFound();
+        }
     }
 
     private static async Task<IResult> UploadBlog(
@@ -336,10 +358,7 @@ public static class BlogEndpoints
         return updatedContent;
     }
 
-    private static async Task<string> HydrateImageUrlsAsync(
-        string content,
-        IObjectStorageService objectStorage,
-        CancellationToken cancellationToken)
+    private static string HydrateImageUrls(string content, HttpContext httpContext)
     {
         var matches = ImageKeyMarkerRegex.Matches(content);
         if (matches.Count == 0)
@@ -347,21 +366,13 @@ public static class BlogEndpoints
             return content;
         }
 
-        var keys = matches
-            .Select(x => x.Groups["key"].Value)
-            .Distinct(StringComparer.Ordinal)
-            .ToList();
-
-        var urlsByKey = new Dictionary<string, string>(StringComparer.Ordinal);
-        foreach (var key in keys)
-        {
-            urlsByKey[key] = await objectStorage.GetDownloadUrlAsync(key, cancellationToken);
-        }
+        var baseUrl = $"{httpContext.Request.Scheme}://{httpContext.Request.Host}";
 
         return ImageKeyMarkerRegex.Replace(content, m =>
         {
             var key = m.Groups["key"].Value;
-            return urlsByKey.TryGetValue(key, out var url) ? $"{{{{imgurl:{url}}}}}" : string.Empty;
+            var encoded = Uri.EscapeDataString(key);
+            return $"{{{{imgurl:{baseUrl}/api/blogs/assets?key={encoded}}}}}";
         });
     }
 }
