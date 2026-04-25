@@ -324,10 +324,25 @@ public sealed class DocumentTextExtractor : IDocumentTextExtractor
             yield break;
         }
 
-        var parts = Regex.Split(line, @"(?<=\?)\s+(?=[A-Z])")
+        var parts = Regex.Split(line, @"(?<=[\?])\s*(?=[A-Z])")
             .Select(x => x.Trim())
             .Where(x => x.Length > 0)
             .ToList();
+
+        // Some PDFs collapse heading question + paragraph into one chunk with no whitespace after '?'
+        // or multiple spaces stripped; split those reliably too.
+        if (parts.Count <= 1)
+        {
+            var questionBoundaryParts = Regex.Split(line, @"(?<=\?)\s*(?=[A-Z][a-z]+\s)")
+                .Select(x => x.Trim())
+                .Where(x => x.Length > 0)
+                .ToList();
+
+            if (questionBoundaryParts.Count > 1)
+            {
+                parts = questionBoundaryParts;
+            }
+        }
 
         if (parts.Count <= 1)
         {
