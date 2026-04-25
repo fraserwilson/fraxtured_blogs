@@ -25,9 +25,11 @@ public static class ServiceCollectionExtensions
     private static string ResolvePostgresConnectionString(IConfiguration configuration)
     {
         var configured =
-            configuration.GetConnectionString("DefaultConnection") ??
+            Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection") ??
+            Environment.GetEnvironmentVariable("DATABASE_URL") ??
             configuration["ConnectionStrings__DefaultConnection"] ??
-            configuration["DATABASE_URL"];
+            configuration["DATABASE_URL"] ??
+            configuration.GetConnectionString("DefaultConnection");
 
         if (string.IsNullOrWhiteSpace(configured))
         {
