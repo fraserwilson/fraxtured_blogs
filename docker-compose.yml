@@ -1,0 +1,92 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: fracturedblogs-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-fracturedblogs}
+      POSTGRES_USER: ${POSTGRES_USER:-fracturedblogs}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fracturedblogs_dev_pw}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fracturedblogs} -d ${POSTGRES_DB:-fracturedblogs}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    container_name: fracturedblogs-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    ports:
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio-data:/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: fracturedblogs-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+
+  api:
+    build:
+      context: ./api
+      dockerfile: src/FracturedBlogs.Api/Dockerfile
+    container_name: fracturedblogs-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      minio:
+        condition: service_started
+    environment:
+      ASPNETCORE_URLS: http://+:5000
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      ConnectionStrings__DefaultConnection: ${ConnectionStrings__DefaultConnection:-Host=postgres;Port=5432;Database=fracturedblogs;Username=fracturedblogs;Password=fracturedblogs_dev_pw}
+      Jwt__Issuer: ${Jwt__Issuer:-fracturedblogs-api}
+      Jwt__Audience: ${Jwt__Audience:-fracturedblogs-web}
+      Jwt__Key: ${Jwt__Key:-replace-with-a-long-random-dev-key}
+      Minio__Endpoint: ${Minio__Endpoint:-minio:9000}
+      Minio__AccessKey: ${Minio__AccessKey:-minioadmin}
+      Minio__SecretKey: ${Minio__SecretKey:-minioadmin}
+      Minio__UseSsl: ${Minio__UseSsl:-false}
+      Minio__BucketName: ${Minio__BucketName:-blogs}
+      Minio__PublicBaseUrl: ${Minio__PublicBaseUrl:-http://localhost:9000}
+      Redis__ConnectionString: ${Redis__ConnectionString:-redis:6379}
+    ports:
+      - "${API_PORT:-5000}:5000"
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+      args:
+        API_PROXY_TARGET: ${API_PROXY_TARGET:-http://api:5000}
+    container_name: fracturedblogs-web
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_started
+    environment:
+      PORT: 3000
+      NEXT_PUBLIC_API_BASE_PATH: ${NEXT_PUBLIC_API_BASE_PATH:-/api}
+      API_PROXY_TARGET: ${API_PROXY_TARGET:-http://api:5000}
+      INTERNAL_API_BASE_URL: ${INTERNAL_API_BASE_URL:-http://api:5000/api}
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+
+volumes:
+  postgres-data:
+  minio-data:
