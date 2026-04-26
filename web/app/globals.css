@@ -187,6 +187,10 @@ html.theme-dark .prose-like blockquote {
   background: rgba(195, 58, 90, 0.12);
 }
 
+html.theme-dark .site-header {
+  border-bottom-color: transparent;
+}
+
 @keyframes fade-rise {
   from {
     opacity: 0;

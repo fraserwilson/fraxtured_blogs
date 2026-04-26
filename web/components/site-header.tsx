@@ -9,7 +9,7 @@ export async function SiteHeader() {
   const isSignedIn = Boolean(session?.user?.email);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-soft/60 bg-[var(--header-bg)] backdrop-blur">
+    <header className="site-header sticky top-0 z-40 border-b border-soft/60 bg-[var(--header-bg)] backdrop-blur">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-5 py-4 md:px-8">
         <Link href="/" className="title-display text-2xl font-bold tracking-tight text-foreground">
           Fractured_Blogs
