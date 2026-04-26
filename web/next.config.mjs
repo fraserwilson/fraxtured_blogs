@@ -7,8 +7,8 @@ const nextConfig = {
     const target = process.env.API_PROXY_TARGET ?? "http://api:5000";
     return [
       {
-        source: "/api/:path*",
-        destination: `${target}/api/:path*`
+        source: "/api/:path((?!auth).*)",
+        destination: `${target}/api/:path`
       }
     ];
   }
