@@ -10,6 +10,8 @@ const errorMessages: Record<string, string> = {
   OAuthCreateAccount: "Account creation during OAuth failed.",
   OAuthAccountNotLinked: "This email is linked to a different sign-in method.",
   Configuration: "Authentication is not configured correctly.",
+  undefined:
+    "Authentication provider is unavailable. Check AZURE_AD_CLIENT_ID / AZURE_AD_CLIENT_SECRET / AZURE_AD_TENANT_ID on the Railway web service.",
   default: "Sign-in failed. Please try again."
 };
 
