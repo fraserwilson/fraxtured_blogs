@@ -31,9 +31,14 @@ export default async function BlogPostPage({ params }: Props) {
             const line = rawLine.trim();
             const imageMatch = line.match(/^\{\{imgurl:(.+)\}\}$/);
             if (imageMatch) {
+              const imageUrl = imageMatch[1];
+              if (!imageUrl.startsWith("/api/blogs/assets?key=") && !imageUrl.includes("/api/blogs/assets?key=")) {
+                return null;
+              }
+
               return (
                 <figure key={index} className="my-6">
-                  <img src={imageMatch[1]} alt={`Document visual ${index + 1}`} className="w-full rounded-lg border border-soft" />
+                  <img src={imageUrl} alt={`Document visual ${index + 1}`} className="w-full rounded-lg border border-soft" />
                 </figure>
               );
             }

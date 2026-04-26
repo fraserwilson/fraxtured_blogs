@@ -6,6 +6,8 @@ using FracturedBlogs.Infrastructure.Data;
 using FracturedBlogs.Parsers.Abstractions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace FracturedBlogs.Api.Endpoints;
@@ -13,13 +15,16 @@ namespace FracturedBlogs.Api.Endpoints;
 public static class BlogEndpoints
 {
     private static readonly Regex ImageKeyMarkerRegex = new(@"\{\{imgkey:(?<key>[^}]+)\}\}", RegexOptions.Compiled);
+    private const int MaxUploadSizeBytes = 50 * 1024 * 1024;
 
     public static RouteGroupBuilder MapBlogEndpoints(this RouteGroupBuilder group)
     {
         group.MapGet("/blogs", GetBlogs);
         group.MapGet("/blogs/{slug}", GetBlogBySlug);
         group.MapGet("/blogs/assets", GetBlogAsset);
-        group.MapPost("/blogs/upload", UploadBlog).DisableAntiforgery();
+        group.MapPost("/blogs/upload", UploadBlog)
+            .DisableAntiforgery()
+            .RequireRateLimiting("uploads");
         group.MapPatch("/blogs/{id:guid}/publish", TogglePublish);
         group.MapDelete("/blogs/{id:guid}", SoftDelete);
         group.MapGet("/blogs/search", SearchBlogs);
@@ -82,7 +87,9 @@ public static class BlogEndpoints
             .AsNoTracking()
             .Include(b => b.BlogTags)
             .ThenInclude(bt => bt.Tag)
-            .FirstOrDefaultAsync(b => b.Slug == slug && b.DeletedAt == null, cancellationToken);
+            .FirstOrDefaultAsync(
+                b => b.Slug == slug && b.DeletedAt == null && b.Status == BlogStatus.Published,
+                cancellationToken);
 
         if (post is null)
         {
@@ -126,22 +133,52 @@ public static class BlogEndpoints
     }
 
     private static async Task<IResult> UploadBlog(
+        HttpContext httpContext,
+        IConfiguration configuration,
         [FromServices] AppDbContext db,
         [FromServices] IDocumentTextExtractor textExtractor,
         [FromServices] IObjectStorageService objectStorage,
         [FromServices] ISlugGenerator slugGenerator,
+        [FromServices] ILoggerFactory loggerFactory,
         [FromForm] UploadBlogRequest request,
         CancellationToken cancellationToken)
     {
+        if (!HasWriteAccess(httpContext, configuration))
+        {
+            return Results.Unauthorized();
+        }
+
+        var logger = loggerFactory.CreateLogger("BlogEndpoints");
+
         try
         {
+            if (string.IsNullOrWhiteSpace(request.Title) || request.Title.Trim().Length > 180)
+            {
+                return Results.BadRequest("Title is required and must be 180 characters or fewer.");
+            }
+
+            if (request.File is null || request.File.Length == 0)
+            {
+                return Results.BadRequest("A file is required.");
+            }
+
+            if (request.File.Length > MaxUploadSizeBytes)
+            {
+                return Results.BadRequest("File is too large. Max size is 50MB.");
+            }
+
             var extension = Path.GetExtension(request.File.FileName).ToLowerInvariant();
             if (extension is not ".pdf" and not ".docx")
             {
                 return Results.BadRequest("Only .pdf and .docx files are supported.");
             }
 
-            await using var stream = request.File.OpenReadStream();
+            await using var stream = request.File.OpenReadStream(MaxUploadSizeBytes);
+            if (!await IsAllowedFileSignatureAsync(stream, extension, cancellationToken))
+            {
+                return Results.BadRequest("Invalid file signature. Only genuine PDF or DOCX documents are accepted.");
+            }
+
             var parseResult = await textExtractor.ExtractAsync(stream, request.File.FileName, cancellationToken);
             stream.Position = 0;
 
@@ -194,19 +231,26 @@ public static class BlogEndpoints
         }
         catch (Exception ex)
         {
+            logger.LogError(ex, "Upload failed for file {FileName}", request.File.FileName);
             return Results.Problem(
                 title: "Upload failed",
-                detail: ex.Message,
                 statusCode: StatusCodes.Status500InternalServerError);
         }
     }
 
     private static async Task<IResult> TogglePublish(
+        HttpContext httpContext,
+        IConfiguration configuration,
         [FromServices] AppDbContext db,
         Guid id,
         TogglePublishRequest request,
         CancellationToken cancellationToken)
     {
+        if (!HasWriteAccess(httpContext, configuration))
+        {
+            return Results.Unauthorized();
+        }
+
         var blog = await db.Blogs.FirstOrDefaultAsync(b => b.Id == id && b.DeletedAt == null, cancellationToken);
         if (blog is null)
         {
@@ -221,10 +265,17 @@ public static class BlogEndpoints
     }
 
     private static async Task<IResult> SoftDelete(
+        HttpContext httpContext,
+        IConfiguration configuration,
         [FromServices] AppDbContext db,
         Guid id,
         CancellationToken cancellationToken)
     {
+        if (!HasWriteAccess(httpContext, configuration))
+        {
+            return Results.Unauthorized();
+        }
+
         var blog = await db.Blogs.FirstOrDefaultAsync(b => b.Id == id && b.DeletedAt == null, cancellationToken);
         if (blog is null)
         {
@@ -315,6 +366,8 @@ public static class BlogEndpoints
             .Select(x => x.Trim())
             .Where(x => x.Length > 0)
             .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Where(x => x.Length <= 40)
+            .Take(10)
             .ToList();
     }
 
@@ -334,6 +387,61 @@ public static class BlogEndpoints
             "y" => true,
             _ => false
         };
+    }
+
+    private static bool HasWriteAccess(HttpContext httpContext, IConfiguration configuration)
+    {
+        var expected = configuration["Security:WriteApiKey"]?.Trim();
+        if (string.IsNullOrWhiteSpace(expected))
+        {
+            return httpContext.RequestServices.GetRequiredService<IHostEnvironment>().IsDevelopment();
+        }
+
+        if (!httpContext.Request.Headers.TryGetValue("X-Write-Api-Key", out var providedHeader))
+        {
+            return false;
+        }
+
+        var provided = providedHeader.ToString().Trim();
+        if (provided.Length == 0)
+        {
+            return false;
+        }
+
+        var expectedBytes = Encoding.UTF8.GetBytes(expected);
+        var providedBytes = Encoding.UTF8.GetBytes(provided);
+        return expectedBytes.Length == providedBytes.Length &&
+               CryptographicOperations.FixedTimeEquals(expectedBytes, providedBytes);
+    }
+
+    private static async Task<bool> IsAllowedFileSignatureAsync(Stream stream, string extension, CancellationToken cancellationToken)
+    {
+        if (!stream.CanSeek)
+        {
+            return false;
+        }
+
+        stream.Position = 0;
+        var header = new byte[8];
+        var bytesRead = await stream.ReadAsync(header.AsMemory(0, header.Length), cancellationToken);
+        stream.Position = 0;
+
+        if (bytesRead < 4)
+        {
+            return false;
+        }
+
+        if (extension == ".pdf")
+        {
+            return header[0] == 0x25 && header[1] == 0x50 && header[2] == 0x44 && header[3] == 0x46;
+        }
+
+        if (extension == ".docx")
+        {
+            return header[0] == 0x50 && header[1] == 0x4B && (header[2] == 0x03 || header[2] == 0x05 || header[2] == 0x07) && (header[3] == 0x04 || header[3] == 0x06 || header[3] == 0x08);
+        }
+
+        return false;
     }
 
     private static async Task<string> PersistExtractedImagesAsync(

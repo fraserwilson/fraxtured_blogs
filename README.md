@@ -77,6 +77,13 @@ npm run dev
 5. Add publish dashboard, draft management, and protected upload route with real bearer token flow.
 6. Add PostgreSQL full-text index (`tsvector`) and search ranking.
 
+## Production Security Notes
+
+- Set `Security__WriteApiKey` on API and `INTERNAL_API_WRITE_KEY` on Web to the same long random value.
+- Set `Cors__AllowedOrigins` on API to your real web origin(s), e.g. `https://www.fracturedblogs.co.za`.
+- Keep `NEXTAUTH_SECRET` and Entra client secret rotated and private.
+- Uploads now go through a server-side web endpoint (`/api/upload`) that requires an authenticated session and injects the write key server-to-server.
+
 ## Notes
 
 - The scaffold is intentionally production-shaped but minimal.

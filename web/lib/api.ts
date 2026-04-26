@@ -42,7 +42,7 @@ export async function searchBlogs(query: string): Promise<SearchResult> {
 }
 
 export async function uploadBlog(form: FormData, token?: string): Promise<UploadResponse> {
-  const response = await fetch(`${resolveBaseUrl()}/blogs/upload`, {
+  const response = await fetch("/api/upload", {
     method: "POST",
     body: form,
     headers: token ? { Authorization: `Bearer ${token}` } : undefined
