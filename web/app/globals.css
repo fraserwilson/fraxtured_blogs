@@ -12,10 +12,33 @@
   --soft: #dcc8cf;
   --card: #fff8fa;
   --muted: #5f4850;
+  --header-bg: rgba(255, 249, 238, 0.86);
+  --field-bg: #fffefb;
+  --field-border: color-mix(in srgb, var(--soft) 75%, #000 25%);
+  --outline-bg: color-mix(in srgb, #fff 82%, var(--accent-2) 18%);
 }
 
 * {
   box-sizing: border-box;
+}
+
+html.theme-light {
+  color-scheme: light;
+}
+
+html.theme-dark {
+  color-scheme: dark;
+  --bg: #120f12;
+  --fg: #f6f1f4;
+  --accent: #d13b60;
+  --accent-2: #a7274a;
+  --soft: #4a3a41;
+  --card: #1c171b;
+  --muted: #d2c0c8;
+  --header-bg: rgba(21, 18, 21, 0.82);
+  --field-bg: #171218;
+  --field-border: color-mix(in srgb, var(--soft) 88%, #fff 12%);
+  --outline-bg: color-mix(in srgb, #121012 84%, var(--accent-2) 16%);
 }
 
 body {
@@ -30,6 +53,14 @@ body {
   font-family: var(--font-body), Georgia, serif;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+}
+
+html.theme-dark body {
+  background:
+    radial-gradient(circle at 12% 12%, rgba(209, 59, 96, 0.16) 0%, transparent 36%),
+    radial-gradient(circle at 88% 8%, rgba(167, 39, 74, 0.2) 0%, transparent 34%),
+    radial-gradient(circle at 84% 78%, rgba(209, 59, 96, 0.1) 0%, transparent 38%),
+    var(--bg);
 }
 
 main {
@@ -54,6 +85,14 @@ h6 {
   box-shadow:
     0 2px 0 rgba(25, 22, 17, 0.06),
     0 14px 40px rgba(25, 22, 17, 0.08);
+}
+
+html.theme-dark .panel {
+  border: 1px solid color-mix(in srgb, var(--soft) 88%, #fff 12%);
+  background: linear-gradient(180deg, #221b20 0%, var(--card) 100%);
+  box-shadow:
+    0 2px 0 rgba(0, 0, 0, 0.36),
+    0 18px 42px rgba(0, 0, 0, 0.42);
 }
 
 .kicker {
@@ -101,15 +140,15 @@ h6 {
 
 .btn-outline {
   border: 1px solid color-mix(in srgb, var(--fg) 20%, #fff 80%);
-  background: color-mix(in srgb, #fff 82%, var(--accent-2) 18%);
+  background: var(--outline-bg);
   color: var(--fg);
 }
 
 .field {
   width: 100%;
   border-radius: 12px;
-  border: 1px solid color-mix(in srgb, var(--soft) 75%, #000 25%);
-  background: #fffefb;
+  border: 1px solid var(--field-border);
+  background: var(--field-bg);
   color: var(--fg);
   padding: 0.65rem 0.8rem;
   font: inherit;
@@ -134,6 +173,10 @@ h6 {
   background: color-mix(in srgb, var(--accent-2) 8%, #fff 92%);
   border-radius: 10px;
   padding: 0.7rem 1rem;
+}
+
+html.theme-dark .prose-like blockquote {
+  background: color-mix(in srgb, var(--accent-2) 22%, #171218 78%);
 }
 
 @keyframes fade-rise {

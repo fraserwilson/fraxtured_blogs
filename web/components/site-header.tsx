@@ -2,13 +2,14 @@ import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { SignOutButton } from "@/components/sign-out-button";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export async function SiteHeader() {
   const session = await getServerSession(authOptions);
   const isSignedIn = Boolean(session?.user?.email);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-soft/60 bg-[rgba(255,249,238,0.86)] backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-soft/60 bg-[var(--header-bg)] backdrop-blur">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-5 py-4 md:px-8">
         <Link href="/" className="title-display text-2xl font-bold tracking-tight text-foreground">
           Fractured_Blogs
@@ -35,6 +36,7 @@ export async function SiteHeader() {
               Sign in
             </Link>
           )}
+          <ThemeToggle />
         </nav>
       </div>
     </header>
