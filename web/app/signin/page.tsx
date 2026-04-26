@@ -23,13 +23,14 @@ export default function SignInPage() {
     : null;
 
   return (
-    <section className="mx-auto max-w-xl rounded-xl border border-soft bg-white/85 p-8 shadow-sm">
-      <h1 className="text-3xl font-semibold tracking-tight">Sign in</h1>
-      <p className="mt-2 text-foreground/75">
+    <section className="panel mx-auto max-w-xl p-8">
+      <p className="kicker">Members area</p>
+      <h1 className="title-display mt-3 text-4xl font-bold tracking-tight">Sign in</h1>
+      <p className="mt-2 text-[color:var(--muted)]">
         Sign in with your Microsoft account. Only allowed accounts can access uploads.
       </p>
       {errorMessage ? (
-        <p className="mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="mt-4 rounded-md border border-red-300/70 bg-red-50 px-3 py-2 text-sm text-red-700">
           {errorMessage}
         </p>
       ) : null}
@@ -37,7 +38,7 @@ export default function SignInPage() {
       <button
         type="button"
         onClick={() => signIn("azure-ad", { callbackUrl: "/upload" })}
-        className="mt-6 rounded-md bg-accent px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
+        className="btn-primary mt-6 px-5 py-2.5 text-sm"
       >
         Sign in with Microsoft
       </button>

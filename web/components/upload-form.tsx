@@ -46,36 +46,37 @@ export function UploadForm() {
   }
 
   return (
-    <section className="mx-auto max-w-2xl space-y-6">
-      <div>
-        <h1 className="text-3xl font-semibold tracking-tight">Upload Document</h1>
-        <p className="mt-2 text-foreground/75">
+    <section className="mx-auto max-w-3xl space-y-6">
+      <div className="space-y-3">
+        <p className="kicker">Creator Studio</p>
+        <h1 className="title-display text-4xl font-bold tracking-tight md:text-5xl">Upload A New Post</h1>
+        <p className="text-[color:var(--muted)]">
           Submit your DOCX/PDF file plus metadata. The API extracts text and can publish immediately.
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-soft bg-white/85 p-6 shadow-sm">
+      <form onSubmit={handleSubmit} className="panel space-y-4 p-6 md:p-8">
         <label className="block space-y-2">
-          <span className="text-sm font-medium">Title</span>
-          <input name="title" required className="w-full rounded-md border border-soft px-3 py-2" />
+          <span className="text-sm font-medium text-foreground/80">Title</span>
+          <input name="title" required className="field" />
         </label>
 
         <label className="block space-y-2">
-          <span className="text-sm font-medium">Summary (optional)</span>
-          <textarea name="summary" rows={3} className="w-full rounded-md border border-soft px-3 py-2" />
+          <span className="text-sm font-medium text-foreground/80">Summary (optional)</span>
+          <textarea name="summary" rows={3} className="field" />
         </label>
 
         <label className="block space-y-2">
-          <span className="text-sm font-medium">Tags (comma-separated)</span>
-          <input name="tags" placeholder="architecture, writing" className="w-full rounded-md border border-soft px-3 py-2" />
+          <span className="text-sm font-medium text-foreground/80">Tags (comma-separated)</span>
+          <input name="tags" placeholder="wrestling, pokemon, games, apps" className="field" />
         </label>
 
         <label className="block space-y-2">
-          <span className="text-sm font-medium">Document</span>
-          <input name="file" type="file" accept=".docx,.pdf" required className="w-full rounded-md border border-soft px-3 py-2" />
+          <span className="text-sm font-medium text-foreground/80">Document</span>
+          <input name="file" type="file" accept=".docx,.pdf" required className="field" />
         </label>
 
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex items-center gap-2 text-sm text-foreground/80">
           <input type="checkbox" name="publishNow" defaultChecked className="h-4 w-4 rounded border-soft" />
           Publish immediately
         </label>
@@ -83,13 +84,13 @@ export function UploadForm() {
         <button
           type="submit"
           disabled={isUploading}
-          className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+          className="btn-primary px-5 py-2.5 text-sm disabled:cursor-not-allowed disabled:opacity-55"
         >
           {isUploading ? "Processing..." : "Upload"}
         </button>
       </form>
 
-      {status ? <p className="text-sm text-foreground/75">{status}</p> : null}
+      {status ? <p className="rounded-lg border border-soft bg-white/70 px-4 py-3 text-sm text-foreground/75">{status}</p> : null}
     </section>
   );
 }

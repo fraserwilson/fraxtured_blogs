@@ -15,10 +15,11 @@ export default async function BlogPostPage({ params }: Props) {
   }
 
   return (
-    <article className="rounded-xl border border-soft bg-white/80 p-8 shadow-sm">
-      <header className="mb-8 space-y-3">
-        <h1 className="text-4xl font-semibold tracking-tight">{post.title}</h1>
-        <p className="text-sm text-foreground/65">
+    <article className="panel fade-rise p-6 md:p-10">
+      <header className="mb-8 space-y-3 border-b border-soft/70 pb-6">
+        <p className="kicker">Fractured_Blogs post</p>
+        <h1 className="title-display text-4xl font-bold tracking-tight md:text-5xl">{post.title}</h1>
+        <p className="text-sm uppercase tracking-[0.08em] text-foreground/65">
           {new Date(post.createdAt).toLocaleDateString()} · {post.readTimeMinutes} min read
         </p>
       </header>
@@ -37,8 +38,8 @@ export default async function BlogPostPage({ params }: Props) {
               }
 
               return (
-                <figure key={index} className="my-6">
-                  <img src={imageUrl} alt={`Document visual ${index + 1}`} className="w-full rounded-lg border border-soft" />
+                <figure key={index} className="my-8 overflow-hidden rounded-2xl border border-soft bg-white/70 p-2">
+                  <img src={imageUrl} alt={`Document visual ${index + 1}`} className="w-full rounded-xl border border-soft/60" />
                 </figure>
               );
             }
@@ -49,32 +50,32 @@ export default async function BlogPostPage({ params }: Props) {
               const text = headingMatch[2];
 
               if (level === 1) {
-                return <h1 key={index} className="mt-8 text-4xl font-semibold tracking-tight">{text}</h1>;
+                return <h1 key={index} className="title-display mt-10 text-4xl font-bold tracking-tight md:text-5xl">{text}</h1>;
               }
 
               if (level === 2) {
-                return <h2 key={index} className="mt-7 text-3xl font-semibold tracking-tight">{text}</h2>;
+                return <h2 key={index} className="title-display mt-10 text-3xl font-semibold tracking-tight md:text-4xl">{text}</h2>;
               }
 
               if (level === 3) {
-                return <h3 key={index} className="mt-6 text-2xl font-semibold tracking-tight">{text}</h3>;
+                return <h3 key={index} className="title-display mt-8 text-2xl font-semibold tracking-tight md:text-3xl">{text}</h3>;
               }
 
               if (level === 4) {
-                return <h4 key={index} className="mt-5 text-xl font-semibold tracking-tight">{text}</h4>;
+                return <h4 key={index} className="title-display mt-7 text-xl font-semibold tracking-tight md:text-2xl">{text}</h4>;
               }
 
               if (level === 5) {
-                return <h5 key={index} className="mt-5 text-lg font-semibold tracking-tight uppercase tracking-[0.06em]">{text}</h5>;
+                return <h5 key={index} className="title-display mt-6 text-lg font-semibold tracking-tight uppercase tracking-[0.06em]">{text}</h5>;
               }
 
-              return <h6 key={index} className="mt-4 text-base font-semibold uppercase tracking-[0.08em] text-foreground/75">{text}</h6>;
+              return <h6 key={index} className="title-display mt-4 text-base font-semibold uppercase tracking-[0.08em] text-foreground/75">{text}</h6>;
             }
 
             const quoteMatch = line.match(/^\{\{quote:([\s\S]+)\}\}$/);
             if (quoteMatch) {
               return (
-                <blockquote key={index} className="my-5 border-l-4 border-accent/65 pl-4 text-foreground/80 italic">
+                <blockquote key={index} className="my-6 border-l-4 border-accent/65 pl-4 text-foreground/80 italic">
                   {quoteMatch[1]}
                 </blockquote>
               );
