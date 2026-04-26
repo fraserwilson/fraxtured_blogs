@@ -173,7 +173,7 @@ public static class BlogEndpoints
                 return Results.BadRequest("Only .pdf and .docx files are supported.");
             }
 
-            await using var stream = request.File.OpenReadStream(MaxUploadSizeBytes);
+            await using var stream = request.File.OpenReadStream();
             if (!await IsAllowedFileSignatureAsync(stream, extension, cancellationToken))
             {
                 return Results.BadRequest("Invalid file signature. Only genuine PDF or DOCX documents are accepted.");
