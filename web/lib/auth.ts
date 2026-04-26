@@ -1,6 +1,16 @@
 import { NextAuthOptions } from "next-auth";
 import AzureADProvider from "next-auth/providers/azure-ad";
 
+function getRequiredEnv(name: string) {
+  const raw = process.env[name];
+  const normalized = (raw ?? "").trim().replace(/^"(.*)"$/, "$1");
+  if (!normalized) {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+
+  return normalized;
+}
+
 function parseCsv(value?: string) {
   return (value ?? "")
     .split(",")
@@ -32,9 +42,12 @@ function isAllowedEmail(email?: string | null) {
 export const authOptions: NextAuthOptions = {
   providers: [
     AzureADProvider({
-      clientId: process.env.AZURE_AD_CLIENT_ID ?? "",
-      clientSecret: process.env.AZURE_AD_CLIENT_SECRET ?? "",
-      tenantId: process.env.AZURE_AD_TENANT_ID ?? ""
+      clientId: getRequiredEnv("AZURE_AD_CLIENT_ID"),
+      clientSecret: getRequiredEnv("AZURE_AD_CLIENT_SECRET"),
+      tenantId: getRequiredEnv("AZURE_AD_TENANT_ID"),
+      client: {
+        token_endpoint_auth_method: "client_secret_post"
+      }
     })
   ],
   pages: {
