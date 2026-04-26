@@ -35,7 +35,7 @@ html.theme-dark {
   --soft: #31353d;
   --card: #191c21;
   --muted: #bcb3b9;
-  --header-bg: rgba(17, 19, 23, 0.9);
+  --header-bg: var(--card);
   --field-bg: #14171d;
   --field-border: #343943;
   --outline-bg: #1a1e25;
@@ -188,6 +188,7 @@ html.theme-dark .prose-like blockquote {
 }
 
 html.theme-dark .site-header {
+  background: var(--card);
   border-bottom-color: transparent;
 }
 
