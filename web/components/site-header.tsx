@@ -1,4 +1,11 @@
-export function SiteHeader() {
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { SignOutButton } from "@/components/sign-out-button";
+
+export async function SiteHeader() {
+  const session = await getServerSession(authOptions);
+  const isSignedIn = Boolean(session?.user?.email);
+
   return (
     <header className="border-b border-soft/70 bg-white/85 backdrop-blur supports-[backdrop-filter]:bg-white/70">
       <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-4">
@@ -9,9 +16,18 @@ export function SiteHeader() {
           <a href="/" className="text-foreground/80 transition hover:text-foreground">
             Posts
           </a>
-          <a href="/upload" className="rounded-md bg-accent px-3 py-2 text-white transition hover:opacity-90">
-            Upload
-          </a>
+          {isSignedIn ? (
+            <>
+              <a href="/upload" className="text-foreground/80 transition hover:text-foreground">
+                Upload
+              </a>
+              <SignOutButton />
+            </>
+          ) : (
+            <a href="/signin" className="rounded-md bg-accent px-3 py-2 text-white transition hover:opacity-90">
+              Sign in
+            </a>
+          )}
         </nav>
       </div>
     </header>
