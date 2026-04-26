@@ -1,10 +1,47 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { SiteHeader } from "@/components/site-header";
+import { getSiteUrl } from "@/lib/site";
+
+const siteUrl = getSiteUrl();
+const siteName = "Fractured Blogs";
+const siteDescription =
+  "Fractured Blogs is a document-driven blog platform for publishing writing, ideas, and experiments without a rigid niche.";
 
 export const metadata: Metadata = {
-  title: "Fractured_Blogs",
-  description: "Upload DOCX/PDF and publish styled blog posts."
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: siteName,
+    template: `%s | ${siteName}`
+  },
+  description: siteDescription,
+  applicationName: siteName,
+  alternates: {
+    canonical: "/"
+  },
+  openGraph: {
+    type: "website",
+    url: siteUrl,
+    siteName,
+    title: siteName,
+    description: siteDescription
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: siteName,
+    description: siteDescription
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1
+    }
+  }
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

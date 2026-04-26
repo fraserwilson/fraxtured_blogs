@@ -1,8 +1,14 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { getPublishedBlogs } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+export const metadata: Metadata = {
+  title: "Home",
+  description:
+    "Explore Fractured Blogs posts on wrestling, gaming, tech, and everything else worth reading."
+};
 
 export default async function HomePage() {
   const posts = await getPublishedBlogs(1, 20).catch(() => ({

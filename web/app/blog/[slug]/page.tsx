@@ -1,4 +1,6 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 import { getBlogBySlug } from "@/lib/api";
 
 type Props = {
@@ -7,8 +9,67 @@ type Props = {
   };
 };
 
+const getPost = cache(async (slug: string) => getBlogBySlug(slug).catch(() => null));
+
+function createDescription(summary: string | null, contentText: string): string {
+  if (summary && summary.trim().length > 0) {
+    return summary.trim();
+  }
+
+  const plainText = contentText
+    .replace(/\{\{imgurl:[\s\S]+?\}\}/g, " ")
+    .replace(/\{\{h[1-6]:([\s\S]+?)\}\}/g, "$1")
+    .replace(/\{\{quote:([\s\S]+?)\}\}/g, "$1")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (plainText.length <= 160) {
+    return plainText;
+  }
+
+  return `${plainText.slice(0, 157).trimEnd()}...`;
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const post = await getPost(params.slug);
+
+  if (!post) {
+    return {
+      title: "Post not found",
+      robots: {
+        index: false,
+        follow: false
+      }
+    };
+  }
+
+  const description = createDescription(post.summary, post.contentText);
+
+  return {
+    title: post.title,
+    description,
+    alternates: {
+      canonical: `/blog/${post.slug}`
+    },
+    openGraph: {
+      type: "article",
+      title: post.title,
+      description,
+      url: `/blog/${post.slug}`,
+      publishedTime: post.createdAt,
+      authors: [post.authorName],
+      tags: post.tags
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: post.title,
+      description
+    }
+  };
+}
+
 export default async function BlogPostPage({ params }: Props) {
-  const post = await getBlogBySlug(params.slug).catch(() => null);
+  const post = await getPost(params.slug);
 
   if (!post) {
     notFound();
