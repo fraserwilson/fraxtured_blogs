@@ -51,10 +51,20 @@ export const authOptions: NextAuthOptions = {
       ]
     : [],
   pages: {
-    signIn: "/signin"
+    signIn: "/signin",
+    error: "/signin"
   },
   session: {
     strategy: "jwt"
+  },
+  debug: process.env.NODE_ENV !== "production",
+  logger: {
+    error(code, metadata) {
+      console.error("[next-auth][logger][error]", code, metadata);
+    },
+    warn(code) {
+      console.warn("[next-auth][logger][warn]", code);
+    }
   },
   callbacks: {
     async signIn({ user }) {
