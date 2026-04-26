@@ -1,14 +1,8 @@
 import { NextAuthOptions } from "next-auth";
 import AzureADProvider from "next-auth/providers/azure-ad";
 
-function getRequiredEnv(name: string) {
-  const raw = process.env[name];
-  const normalized = (raw ?? "").trim().replace(/^"(.*)"$/, "$1");
-  if (!normalized) {
-    throw new Error(`Missing required environment variable: ${name}`);
-  }
-
-  return normalized;
+function getEnv(name: string) {
+  return (process.env[name] ?? "").trim().replace(/^"(.*)"$/, "$1");
 }
 
 function parseCsv(value?: string) {
@@ -20,6 +14,10 @@ function parseCsv(value?: string) {
 
 const allowedEmails = parseCsv(process.env.ALLOWED_EMAILS);
 const allowedDomains = parseCsv(process.env.ALLOWED_EMAIL_DOMAINS);
+const azureClientId = getEnv("AZURE_AD_CLIENT_ID");
+const azureClientSecret = getEnv("AZURE_AD_CLIENT_SECRET");
+const azureTenantId = getEnv("AZURE_AD_TENANT_ID");
+const isAzureConfigured = Boolean(azureClientId && azureClientSecret && azureTenantId);
 
 function isAllowedEmail(email?: string | null) {
   if (!email) {
@@ -40,16 +38,18 @@ function isAllowedEmail(email?: string | null) {
 }
 
 export const authOptions: NextAuthOptions = {
-  providers: [
-    AzureADProvider({
-      clientId: getRequiredEnv("AZURE_AD_CLIENT_ID"),
-      clientSecret: getRequiredEnv("AZURE_AD_CLIENT_SECRET"),
-      tenantId: getRequiredEnv("AZURE_AD_TENANT_ID"),
-      client: {
-        token_endpoint_auth_method: "client_secret_post"
-      }
-    })
-  ],
+  providers: isAzureConfigured
+    ? [
+        AzureADProvider({
+          clientId: azureClientId,
+          clientSecret: azureClientSecret,
+          tenantId: azureTenantId,
+          client: {
+            token_endpoint_auth_method: "client_secret_post"
+          }
+        })
+      ]
+    : [],
   pages: {
     signIn: "/signin"
   },
