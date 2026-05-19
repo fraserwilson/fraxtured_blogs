@@ -9,15 +9,15 @@ export async function SiteHeader() {
   const isSignedIn = Boolean(session?.user?.email);
 
   return (
-    <header className="site-header sticky top-0 z-40 border-b border-soft/60 bg-[var(--header-bg)] backdrop-blur">
+    <header className="site-header sticky top-0 z-40">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-5 py-4 md:px-8">
-        <Link href="/" className="title-display text-2xl font-bold tracking-tight text-foreground">
-          Fractured_Blogs
+        <Link href="/" className="title-display text-2xl font-bold tracking-tight text-white transition hover:text-[#00d4ff]">
+          fractured_<span className="text-[#00d4ff]">blogs</span>
         </Link>
         <nav className="flex items-center gap-3 text-sm font-medium">
           <Link
             href="/"
-            className="rounded-lg border border-transparent px-3 py-2 text-foreground/80 transition hover:border-soft hover:bg-white/70 hover:text-foreground"
+            className="rounded-sm border border-transparent px-3 py-2 text-[color:var(--muted)] transition hover:border-[#2a2a2a] hover:text-[#00d4ff]"
           >
             Posts
           </Link>
@@ -25,7 +25,7 @@ export async function SiteHeader() {
             <>
               <Link
                 href="/upload"
-                className="rounded-lg border border-transparent px-3 py-2 text-foreground/80 transition hover:border-soft hover:bg-white/70 hover:text-foreground"
+                className="rounded-sm border border-transparent px-3 py-2 text-[color:var(--muted)] transition hover:border-[#2a2a2a] hover:text-[#00d4ff]"
               >
                 Upload
               </Link>

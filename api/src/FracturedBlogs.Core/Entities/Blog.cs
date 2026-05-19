@@ -10,6 +10,7 @@ public class Blog
     public string? Summary { get; set; }
     public string ContentText { get; set; } = string.Empty;
     public string FileKey { get; set; } = string.Empty;
+    public string? CoverImageKey { get; set; }
     public string AuthorName { get; set; } = "Fraser Wilson";
     public int WordCount { get; set; }
     public int ReadTimeMinutes { get; set; }

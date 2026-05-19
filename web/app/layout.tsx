@@ -50,7 +50,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var stored=localStorage.getItem("theme");var dark=stored?stored==="dark":window.matchMedia("(prefers-color-scheme: dark)").matches;document.documentElement.classList.toggle("theme-dark",dark);document.documentElement.classList.toggle("theme-light",!dark);}catch(e){document.documentElement.classList.add("theme-light");}})();`
+            __html: `(function(){try{var stored=localStorage.getItem("theme");var dark=stored?stored==="dark":true;document.documentElement.classList.toggle("theme-dark",dark);document.documentElement.classList.toggle("theme-light",!dark);}catch(e){document.documentElement.classList.add("theme-dark");}})();`
           }}
         />
       </head>

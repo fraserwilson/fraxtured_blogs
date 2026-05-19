@@ -16,6 +16,11 @@ public static class BlogEndpoints
 {
     private static readonly Regex ImageKeyMarkerRegex = new(@"\{\{imgkey:(?<key>[^}]+)\}\}", RegexOptions.Compiled);
     private const int MaxUploadSizeBytes = 50 * 1024 * 1024;
+    private const int MaxCoverImageSizeBytes = 10 * 1024 * 1024;
+    private static readonly HashSet<string> AllowedCoverImageExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".jpg", ".jpeg", ".png", ".webp", ".gif"
+    };
 
     public static RouteGroupBuilder MapBlogEndpoints(this RouteGroupBuilder group)
     {
@@ -35,6 +40,7 @@ public static class BlogEndpoints
 
     private static async Task<IResult> GetBlogs(
         [FromServices] AppDbContext db,
+        HttpContext httpContext,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
         [FromQuery] string? tag = null,
@@ -68,6 +74,7 @@ public static class BlogEndpoints
                 b.Title,
                 b.Slug,
                 b.Summary,
+                string.IsNullOrWhiteSpace(b.CoverImageKey) ? null : BuildAssetUrl(httpContext, b.CoverImageKey),
                 b.AuthorName,
                 b.BlogTags.Select(x => x.Tag.Name).ToList(),
                 b.CreatedAt,
@@ -103,6 +110,7 @@ public static class BlogEndpoints
             post.Title,
             post.Slug,
             post.Summary,
+            string.IsNullOrWhiteSpace(post.CoverImageKey) ? null : BuildAssetUrl(httpContext, post.CoverImageKey),
             post.AuthorName,
             post.BlogTags.Select(x => x.Tag.Name).ToList(),
             hydratedContent,
@@ -167,6 +175,34 @@ public static class BlogEndpoints
                 return Results.BadRequest("File is too large. Max size is 50MB.");
             }
 
+            string? coverImageKey = null;
+            if (request.CoverImage is not null && request.CoverImage.Length > 0)
+            {
+                if (request.CoverImage.Length > MaxCoverImageSizeBytes)
+                {
+                    return Results.BadRequest("Cover image is too large. Max size is 10MB.");
+                }
+
+                var coverExtension = Path.GetExtension(request.CoverImage.FileName).ToLowerInvariant();
+                if (!AllowedCoverImageExtensions.Contains(coverExtension))
+                {
+                    return Results.BadRequest("Cover image must be .jpg, .jpeg, .png, .webp, or .gif.");
+                }
+
+                var coverContentType = request.CoverImage.ContentType?.Trim() ?? string.Empty;
+                if (!coverContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+                {
+                    return Results.BadRequest("Invalid cover image content type.");
+                }
+
+                await using var coverStream = request.CoverImage.OpenReadStream();
+                coverImageKey = await objectStorage.UploadAsync(
+                    coverStream,
+                    coverContentType,
+                    request.CoverImage.FileName,
+                    cancellationToken);
+            }
+
             var extension = Path.GetExtension(request.File.FileName).ToLowerInvariant();
             if (extension is not ".pdf" and not ".docx")
             {
@@ -200,6 +236,7 @@ public static class BlogEndpoints
                 Summary = string.IsNullOrWhiteSpace(request.Summary) ? null : request.Summary.Trim(),
                 ContentText = contentWithImageKeys,
                 FileKey = fileKey,
+                CoverImageKey = coverImageKey,
                 WordCount = parseResult.WordCount,
                 ReadTimeMinutes = parseResult.ReadTimeMinutes,
                 Status = publishNow ? BlogStatus.Published : BlogStatus.Draft,
@@ -291,6 +328,7 @@ public static class BlogEndpoints
 
     private static async Task<IResult> SearchBlogs(
         [FromServices] AppDbContext db,
+        HttpContext httpContext,
         [FromQuery] string q,
         CancellationToken cancellationToken)
     {
@@ -318,6 +356,7 @@ public static class BlogEndpoints
                 b.Title,
                 b.Slug,
                 b.Summary,
+                string.IsNullOrWhiteSpace(b.CoverImageKey) ? null : BuildAssetUrl(httpContext, b.CoverImageKey),
                 b.AuthorName,
                 b.BlogTags.Select(x => x.Tag.Name).ToList(),
                 b.CreatedAt,
@@ -479,8 +518,19 @@ public static class BlogEndpoints
         return ImageKeyMarkerRegex.Replace(content, m =>
         {
             var key = m.Groups["key"].Value;
-            var encoded = Uri.EscapeDataString(key);
-            return $"{{{{imgurl:{baseUrl}/api/blogs/assets?key={encoded}}}}}";
+            return $"{{{{imgurl:{BuildAssetUrl(baseUrl, key)}}}}}";
         });
+    }
+
+    private static string BuildAssetUrl(HttpContext httpContext, string key)
+    {
+        var baseUrl = $"{httpContext.Request.Scheme}://{httpContext.Request.Host}";
+        return BuildAssetUrl(baseUrl, key);
+    }
+
+    private static string BuildAssetUrl(string baseUrl, string key)
+    {
+        var encoded = Uri.EscapeDataString(key);
+        return $"{baseUrl}/api/blogs/assets?key={encoded}";
     }
 }

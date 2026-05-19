@@ -17,6 +17,7 @@ public class BlogConfiguration : IEntityTypeConfiguration<Blog>
 
         builder.Property(x => x.Summary).HasMaxLength(500);
         builder.Property(x => x.FileKey).HasMaxLength(512).IsRequired();
+        builder.Property(x => x.CoverImageKey).HasMaxLength(512);
         builder.Property(x => x.AuthorName).HasMaxLength(120).IsRequired();
         builder.Property(x => x.ContentText).HasColumnType("text");
 

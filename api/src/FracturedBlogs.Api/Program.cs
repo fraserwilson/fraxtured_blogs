@@ -126,6 +126,9 @@ using (var scope = app.Services.CreateScope())
     {
         await db.Database.EnsureCreatedAsync();
     }
+
+    await db.Database.ExecuteSqlRawAsync(
+        "ALTER TABLE blogs ADD COLUMN IF NOT EXISTS cover_image_key character varying(512);");
 }
 
 app.Run();

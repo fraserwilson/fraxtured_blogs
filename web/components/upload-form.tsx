@@ -31,6 +31,20 @@ export function UploadForm() {
       return;
     }
 
+    const coverImage = formData.get("coverImage");
+    if (coverImage instanceof File && coverImage.size > 0) {
+      const imageExtension = coverImage.name.split(".").pop()?.toLowerCase();
+      if (!imageExtension || !["jpg", "jpeg", "png", "webp", "gif"].includes(imageExtension)) {
+        setStatus("Cover image must be .jpg, .jpeg, .png, .webp, or .gif.");
+        return;
+      }
+
+      if (coverImage.size > 10 * 1024 * 1024) {
+        setStatus("Cover image is too large. Max size is 10MB.");
+        return;
+      }
+    }
+
     setIsUploading(true);
     setStatus("Uploading and processing...");
 
@@ -49,7 +63,7 @@ export function UploadForm() {
     <section className="mx-auto max-w-3xl space-y-6">
       <div className="space-y-3">
         <p className="kicker">Creator Studio</p>
-        <h1 className="title-display text-4xl font-bold tracking-tight md:text-5xl">Upload A New Post</h1>
+        <h1 className="title-display text-4xl font-bold tracking-tight uppercase md:text-5xl">Upload A New Post</h1>
         <p className="text-[color:var(--muted)]">
           Submit your DOCX/PDF file plus metadata. The API extracts text and can publish immediately.
         </p>
@@ -76,6 +90,11 @@ export function UploadForm() {
           <input name="file" type="file" accept=".docx,.pdf" required className="field" />
         </label>
 
+        <label className="block space-y-2">
+          <span className="text-sm font-medium text-foreground/80">Cover Image (optional)</span>
+          <input name="coverImage" type="file" accept=".jpg,.jpeg,.png,.webp,.gif" className="field" />
+        </label>
+
         <label className="flex items-center gap-2 text-sm text-foreground/80">
           <input type="checkbox" name="publishNow" defaultChecked className="h-4 w-4 rounded border-soft" />
           Publish immediately
@@ -90,7 +109,7 @@ export function UploadForm() {
         </button>
       </form>
 
-      {status ? <p className="rounded-lg border border-soft bg-white/70 px-4 py-3 text-sm text-foreground/75">{status}</p> : null}
+      {status ? <p className="rounded border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 text-sm text-[color:var(--muted)]">{status}</p> : null}
     </section>
   );
 }

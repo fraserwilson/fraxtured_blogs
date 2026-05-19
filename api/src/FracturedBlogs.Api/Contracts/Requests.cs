@@ -16,6 +16,9 @@ public sealed class UploadBlogRequest
     [FromForm(Name = "file")]
     public required IFormFile File { get; init; }
 
+    [FromForm(Name = "coverImage")]
+    public IFormFile? CoverImage { get; init; }
+
     [FromForm(Name = "publishNow")]
     public string? PublishNow { get; init; }
 }

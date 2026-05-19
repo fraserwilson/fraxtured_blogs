@@ -58,12 +58,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       url: `/blog/${post.slug}`,
       publishedTime: post.createdAt,
       authors: [post.authorName],
-      tags: post.tags
+      tags: post.tags,
+      images: post.coverImageUrl ? [{ url: post.coverImageUrl, alt: `${post.title} cover image` }] : undefined
     },
     twitter: {
       card: "summary_large_image",
       title: post.title,
-      description
+      description,
+      images: post.coverImageUrl ? [post.coverImageUrl] : undefined
     }
   };
 }
@@ -76,13 +78,19 @@ export default async function BlogPostPage({ params }: Props) {
   }
 
   return (
-    <article className="panel fade-rise p-6 md:p-10">
-      <header className="mb-8 space-y-3 border-b border-soft/70 pb-6">
-        <p className="kicker">Fractured_Blogs post</p>
+    <article className="panel fade-rise relative overflow-hidden p-6 md:p-10">
+      <div className="absolute left-0 top-0 h-0.5 w-full bg-gradient-to-r from-[#00d4ff] via-[#0088cc] to-transparent" />
+      <header className="mb-8 space-y-3 border-b border-[#1e1e1e] pb-6">
+        <p className="kicker">fractured_blogs post</p>
         <h1 className="title-display text-4xl font-bold tracking-tight md:text-5xl">{post.title}</h1>
-        <p className="text-sm uppercase tracking-[0.08em] text-foreground/65">
+        <p className="text-sm uppercase tracking-[0.08em] text-[color:var(--muted)]">
           {new Date(post.createdAt).toLocaleDateString()} · {post.readTimeMinutes} min read
         </p>
+        {post.coverImageUrl ? (
+          <figure className="mt-5 overflow-hidden rounded border border-[#1e1e1e] bg-[#0a0a0a] p-1.5">
+            <img src={post.coverImageUrl} alt={`${post.title} cover image`} className="w-full rounded-sm" />
+          </figure>
+        ) : null}
       </header>
 
       <section className="prose-like">
@@ -99,8 +107,8 @@ export default async function BlogPostPage({ params }: Props) {
               }
 
               return (
-                <figure key={index} className="my-8 overflow-hidden rounded-2xl border border-soft bg-white/70 p-2">
-                  <img src={imageUrl} alt={`Document visual ${index + 1}`} className="w-full rounded-xl border border-soft/60" />
+                <figure key={index} className="my-8 overflow-hidden rounded border border-[#1e1e1e] bg-[#0a0a0a] p-1.5">
+                  <img src={imageUrl} alt={`Document visual ${index + 1}`} className="w-full rounded-sm" />
                 </figure>
               );
             }
@@ -130,13 +138,13 @@ export default async function BlogPostPage({ params }: Props) {
                 return <h5 key={index} className="title-display mt-6 text-lg font-semibold tracking-tight uppercase tracking-[0.06em]">{text}</h5>;
               }
 
-              return <h6 key={index} className="title-display mt-4 text-base font-semibold uppercase tracking-[0.08em] text-foreground/75">{text}</h6>;
+              return <h6 key={index} className="title-display mt-4 text-base font-semibold uppercase tracking-[0.08em] text-[color:var(--muted)]">{text}</h6>;
             }
 
             const quoteMatch = line.match(/^\{\{quote:([\s\S]+)\}\}$/);
             if (quoteMatch) {
               return (
-                <blockquote key={index} className="my-6 border-l-4 border-accent/65 pl-4 text-foreground/80 italic">
+                <blockquote key={index} className="my-6 border-l-4 border-[#00d4ff] pl-4 text-[#cccccc] italic">
                   {quoteMatch[1]}
                 </blockquote>
               );

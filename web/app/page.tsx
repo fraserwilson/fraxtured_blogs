@@ -21,19 +21,19 @@ export default async function HomePage() {
   return (
     <section className="space-y-8">
       <div className="panel fade-rise relative overflow-hidden p-7 md:p-10">
-        <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-[rgba(15,118,110,0.12)] blur-2xl" />
-        <div className="pointer-events-none absolute -bottom-20 -left-12 h-48 w-48 rounded-full bg-[rgba(204,81,38,0.16)] blur-2xl" />
+        <div className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-[rgba(0,212,255,0.05)] blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-20 -left-12 h-48 w-48 rounded-full bg-[rgba(0,136,204,0.06)] blur-2xl" />
         <div className="relative space-y-3">
           <p className="kicker">Welcome to the chaos — in the best way possible.</p>
           <h1 className="title-display max-w-4xl text-4xl font-bold tracking-tight md:text-6xl">
-            A collection of everything I’m obsessed with.
+            A collection of everything I'm obsessed with.
           </h1>
           <p className="max-w-3xl text-lg text-[color:var(--muted)]">
-            Wrestling storylines that deserve better. Pokémon nostalgia. Games I can’t stop playing. Building apps and
+            Wrestling storylines that deserve better. Pokémon nostalgia. Games I can't stop playing. Building apps and
             figuring things out as I go — it all ends up here.
           </p>
           <p className="max-w-3xl text-lg text-[color:var(--muted)]">No niche. No rules. Just things I think are worth your time.</p>
-          <p className="max-w-3xl text-lg text-[color:var(--muted)]">Stick around — there’s always something new loading.</p>
+          <p className="max-w-3xl text-lg text-[color:var(--muted)]">Stick around — there's always something new loading.</p>
         </div>
       </div>
 
@@ -47,16 +47,21 @@ export default async function HomePage() {
         {posts.items.map((post, index) => (
           <article
             key={post.id}
-            className="panel fade-rise relative overflow-hidden p-6 transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_32px_rgba(25,22,17,0.14)] md:p-7"
+            className="panel fade-rise relative overflow-hidden p-6 transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_32px_rgba(0,212,255,0.08)] md:p-7"
             style={{ animationDelay: `${Math.min(index * 40, 220)}ms` }}
           >
-            <div className="absolute left-0 top-0 h-1.5 w-full bg-gradient-to-r from-[var(--accent)] via-[var(--accent-2)] to-transparent" />
-            <div className="mb-3 flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.09em] text-foreground/55">
+            <div className="absolute left-0 top-0 h-0.5 w-full bg-gradient-to-r from-[#00d4ff] via-[#0088cc] to-transparent" />
+            {post.coverImageUrl ? (
+              <div className="mb-4 overflow-hidden rounded border border-[#1e1e1e] bg-[#0a0a0a]">
+                <img src={post.coverImageUrl} alt={`${post.title} cover image`} className="h-56 w-full object-cover" />
+              </div>
+            ) : null}
+            <div className="mb-3 flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.09em] text-[color:var(--muted)]">
               <span>{new Date(post.createdAt).toLocaleDateString()}</span>
               <span>{post.readTimeMinutes} min read</span>
             </div>
             <h2 className="title-display text-2xl font-semibold md:text-3xl">
-              <Link href={`/blog/${post.slug}`} className="transition hover:text-accent">
+              <Link href={`/blog/${post.slug}`} className="transition hover:text-[#00d4ff]">
                 {post.title}
               </Link>
             </h2>
@@ -66,7 +71,7 @@ export default async function HomePage() {
                 {post.tags.map((tag) => (
                   <li
                     key={tag}
-                    className="rounded-full border border-soft bg-[rgba(15,118,110,0.08)] px-3 py-1 text-xs font-medium text-foreground/75"
+                    className="rounded-sm border border-[#2a2a2a] bg-[rgba(0,212,255,0.05)] px-3 py-1 text-xs font-medium text-[color:var(--muted)]"
                   >
                     {tag}
                   </li>

@@ -37,10 +37,10 @@ export function ThemeToggle() {
     <button
       type="button"
       onClick={toggleTheme}
-      className="btn-outline rounded-lg px-3 py-2 text-sm font-medium transition hover:bg-white/10"
-      aria-label="Toggle dark mode"
+      className="btn-outline px-3 py-2 text-xs font-medium uppercase tracking-widest transition"
+      aria-label="Toggle theme"
     >
-      {mounted ? (theme === "dark" ? "Light mode" : "Dark mode") : "Theme"}
+      {mounted ? (theme === "dark" ? "Slate" : "Void") : "Theme"}
     </button>
   );
 }

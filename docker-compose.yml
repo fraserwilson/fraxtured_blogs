@@ -84,6 +84,14 @@ services:
       NEXT_PUBLIC_API_BASE_PATH: ${NEXT_PUBLIC_API_BASE_PATH:-/api}
       API_PROXY_TARGET: ${API_PROXY_TARGET:-http://api:5000}
       INTERNAL_API_BASE_URL: ${INTERNAL_API_BASE_URL:-http://api:5000/api}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-replace-with-a-long-random-secret}
+      INTERNAL_API_WRITE_KEY: ${INTERNAL_API_WRITE_KEY:-replace-with-the-same-write-key-as-api}
+      AZURE_AD_CLIENT_ID: ${AZURE_AD_CLIENT_ID:-replace-with-entra-app-client-id}
+      AZURE_AD_CLIENT_SECRET: ${AZURE_AD_CLIENT_SECRET:-replace-with-entra-app-client-secret}
+      AZURE_AD_TENANT_ID: ${AZURE_AD_TENANT_ID:-replace-with-entra-tenant-id}
+      ALLOWED_EMAILS: ${ALLOWED_EMAILS:-you@yourdomain.com}
+      ALLOWED_EMAIL_DOMAINS: ${ALLOWED_EMAIL_DOMAINS:-}
     ports:
       - "${WEB_PORT:-3000}:3000"
 

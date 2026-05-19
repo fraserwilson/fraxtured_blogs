@@ -5,6 +5,7 @@ export type BlogSummary = {
   title: string;
   slug: string;
   summary: string | null;
+  coverImageUrl: string | null;
   authorName: string;
   tags: string[];
   createdAt: string;
